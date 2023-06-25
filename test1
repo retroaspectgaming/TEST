@@ -1,0 +1,116 @@
+// Initialize canvas
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+// Set up game variables
+let birdX = 50;
+let birdY = canvas.height / 2;
+let birdSpeedY = 0;
+const gravity = 0.5;
+const jumpHeight = -10;
+let score = 0;
+let isGameOver = false;
+
+// Load images
+const birdImage = new Image();
+birdImage.src = "bird.png";
+const backgroundImage = new Image();
+backgroundImage.src = "background.png";
+const pipeImage = new Image();
+pipeImage.src = "pipe.png";
+
+// Handle user input
+document.addEventListener("keydown", jump);
+
+function jump() {
+  birdSpeedY = jumpHeight;
+}
+
+// Pipe properties
+const pipeGap = 100;
+const pipeWidth = 60;
+const pipeHeight = 400;
+const pipes = [];
+pipes.push({
+  x: canvas.width,
+  y: 0,
+});
+
+// Update game objects
+function update() {
+  if (isGameOver) return;
+
+  // Clear canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw background
+  ctx.drawImage(backgroundImage, 0, 0);
+
+  // Bird properties
+  birdY += birdSpeedY;
+  birdSpeedY += gravity;
+
+  // Draw bird
+  ctx.drawImage(birdImage, birdX, birdY);
+
+  // Draw pipes
+  for (let i = 0; i < pipes.length; i++) {
+    ctx.drawImage(pipeImage, pipes[i].x, pipes[i].y);
+    pipes[i].x--;
+
+    // Check for collision
+    if (
+      birdX + birdImage.width >= pipes[i].x &&
+      birdX <= pipes[i].x + pipeWidth &&
+      (birdY <= pipes[i].y + pipeHeight ||
+        birdY + birdImage.height >= pipes[i].y + pipeHeight + pipeGap)
+    ) {
+      gameOver();
+    }
+
+    // Increment score if bird passes a pipe
+    if (pipes[i].x === birdX - pipeWidth) {
+      score++;
+    }
+
+    // Remove pipe if it's off the screen
+    if (pipes[i].x + pipeWidth === 0) {
+      pipes.splice(i, 1);
+    }
+  }
+
+  // Spawn new pipe
+  if (canvas.width - pipes[pipes.length - 1].x >= 200) {
+    pipes.push({
+      x: canvas.width,
+      y: Math.floor(Math.random() * (canvas.height - pipeHeight)),
+    });
+  }
+
+  // Draw score
+  ctx.fillStyle = "#000";
+  ctx.font = "20px Verdana";
+  ctx.fillText("Score: " + score, 10, 25);
+
+  // Check if bird hits the ground
+  if (birdY + birdImage.height >= canvas.height) {
+    gameOver();
+  }
+
+  // Repeat update function
+  requestAnimationFrame(update);
+}
+
+// Game over
+function gameOver() {
+  isGameOver = true;
+  ctx.fillStyle = "#000";
+  ctx.font = "40px Verdana";
+  ctx.fillText("Game Over", canvas.width / 2 - 100, canvas.height / 2 - 50);
+  ctx.fillText("Score: " + score, canvas.width / 2 - 70, canvas.height / 2);
+}
+
+// Start the game
+birdImage.onload = function () {
+  update();
+};
